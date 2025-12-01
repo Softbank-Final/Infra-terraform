@@ -147,8 +147,10 @@ resource "aws_security_group" "redis_sg" {
 data "aws_caller_identity" "current" {}
 
 # SQS (기존 큐 사용)
+# visibility_timeout_seconds = 30 -> 추후 조정 예정 11/30 회의 중 
 data "aws_sqs_queue" "job_queue" {
   name = "nanogrid-task-queue"
+  
 }
 
 # Redis (ElastiCache) - Data 서브넷에 배치
