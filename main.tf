@@ -146,10 +146,9 @@ resource "aws_security_group" "redis_sg" {
 # 현재 AWS 계정 ID 가져오기
 data "aws_caller_identity" "current" {}
 
-# SQS
-resource "aws_sqs_queue" "job_queue" {
-  name                       = "nanogrid-job-queue"
-  visibility_timeout_seconds = 30
+# SQS (기존 큐 사용)
+data "aws_sqs_queue" "job_queue" {
+  name = "nanogrid-task-queue"
 }
 
 # Redis (ElastiCache) - Data 서브넷에 배치
@@ -169,9 +168,9 @@ resource "aws_elasticache_cluster" "redis" {
   security_group_ids   = [aws_security_group.redis_sg.id]
 }
 
-# S3 Bucket (계정 ID로 유니크하게)
-resource "aws_s3_bucket" "code_bucket" {
-  bucket = "nanogrid-code-bucket-${data.aws_caller_identity.current.account_id}"
+# S3 Bucket (기존 버킷 사용)
+data "aws_s3_bucket" "code_bucket" {
+  bucket = "nanogrid-code-bucket"
 }
 
 # DynamoDB
@@ -310,7 +309,7 @@ resource "aws_cloudwatch_metric_alarm" "sqs_high" {
   alarm_actions       = [aws_autoscaling_policy.scale_out.arn]
 
   dimensions = {
-    QueueName = aws_sqs_queue.job_queue.name
+    QueueName = data.aws_sqs_queue.job_queue.name
   }
 }
 
@@ -328,7 +327,7 @@ resource "aws_cloudwatch_metric_alarm" "sqs_low" {
   alarm_actions       = [aws_autoscaling_policy.scale_in.arn]
 
   dimensions = {
-    QueueName = aws_sqs_queue.job_queue.name
+    QueueName = data.aws_sqs_queue.job_queue.name
   }
 }
 
@@ -376,7 +375,7 @@ resource "aws_iam_role_policy" "lambda_custom" {
           "s3:GetObject",
           "s3:DeleteObject"
         ]
-        Resource = "${aws_s3_bucket.code_bucket.arn}/*"
+        Resource = "${data.aws_s3_bucket.code_bucket.arn}/*"
       },
       {
         Effect = "Allow"
@@ -396,7 +395,7 @@ resource "aws_iam_role_policy" "lambda_custom" {
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes"
         ]
-        Resource = aws_sqs_queue.job_queue.arn
+        Resource = data.aws_sqs_queue.job_queue.arn
       }
     ]
   })
@@ -434,7 +433,7 @@ resource "aws_lambda_function" "resource_manager" {
 
   environment {
     variables = {
-      S3_BUCKET      = aws_s3_bucket.code_bucket.bucket
+      S3_BUCKET      = data.aws_s3_bucket.code_bucket.bucket
       DYNAMODB_TABLE = aws_dynamodb_table.meta_table.name
     }
   }
@@ -459,9 +458,9 @@ resource "aws_lambda_function" "dispatcher" {
 
   environment {
     variables = {
-      S3_BUCKET      = aws_s3_bucket.code_bucket.bucket
+      S3_BUCKET      = data.aws_s3_bucket.code_bucket.bucket
       DYNAMODB_TABLE = aws_dynamodb_table.meta_table.name
-      SQS_QUEUE_URL  = aws_sqs_queue.job_queue.url
+      SQS_QUEUE_URL  = data.aws_sqs_queue.job_queue.url
       REDIS_HOST     = aws_elasticache_cluster.redis.cache_nodes[0].address
       REDIS_PORT     = "6379"
     }

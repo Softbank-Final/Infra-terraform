@@ -20,17 +20,17 @@ output "private_data_subnet_id" {
 
 output "s3_bucket_name" {
   description = "S3 Bucket Name"
-  value       = aws_s3_bucket.code_bucket.bucket
+  value       = data.aws_s3_bucket.code_bucket.bucket
 }
 
 output "sqs_queue_url" {
   description = "SQS Queue URL"
-  value       = aws_sqs_queue.job_queue.url
+  value       = data.aws_sqs_queue.job_queue.url
 }
 
 output "sqs_queue_arn" {
   description = "SQS Queue ARN"
-  value       = aws_sqs_queue.job_queue.arn
+  value       = data.aws_sqs_queue.job_queue.arn
 }
 
 output "dynamodb_table_name" {
