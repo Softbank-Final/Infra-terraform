@@ -1,3 +1,6 @@
+# ==========================================
+# Network Outputs
+# ==========================================
 output "vpc_id" {
   description = "VPC ID"
   value       = aws_vpc.main.id
@@ -9,28 +12,70 @@ output "public_subnet_id" {
 }
 
 output "private_app_subnet_id" {
-  description = "Private App Subnet ID"
+  description = "Private App Subnet ID (Controller Layer)"
   value       = aws_subnet.private_app.id
 }
 
 output "private_data_subnet_id" {
-  description = "Private Data Subnet ID"
+  description = "Private Data Subnet ID (Worker Layer)"
   value       = aws_subnet.private_data.id
 }
 
-output "s3_bucket_name" {
-  description = "S3 Bucket Name"
+# ==========================================
+# ALB Outputs
+# ==========================================
+output "alb_dns_name" {
+  description = "ALB DNS Name (Entry Point)"
+  value       = aws_lb.main.dns_name
+}
+
+output "alb_arn" {
+  description = "ALB ARN"
+  value       = aws_lb.main.arn
+}
+
+# ==========================================
+# Controller Outputs
+# ==========================================
+output "controller_private_ip" {
+  description = "Controller EC2 Private IP"
+  value       = aws_instance.controller.private_ip
+}
+
+output "controller_instance_id" {
+  description = "Controller EC2 Instance ID"
+  value       = aws_instance.controller.id
+}
+
+# ==========================================
+# AI Node Outputs
+# ==========================================
+output "ai_node_private_ip" {
+  description = "AI Node Private IP"
+  value       = aws_instance.ai_node.private_ip
+}
+
+output "ai_node_endpoint" {
+  description = "AI Node Endpoint URL"
+  value       = "http://${aws_instance.ai_node.private_ip}:11434"
+}
+
+# ==========================================
+# Storage Outputs
+# ==========================================
+output "s3_code_bucket" {
+  description = "S3 Code Bucket Name"
   value       = data.aws_s3_bucket.code_bucket.bucket
+}
+
+output "s3_user_data_bucket" {
+  description = "S3 User Data Bucket Name (Output Binding)"
+  value       = aws_s3_bucket.user_data_bucket.bucket
 }
 
 output "sqs_queue_url" {
   description = "SQS Queue URL"
   value       = data.aws_sqs_queue.job_queue.url
-}
-
-output "sqs_queue_arn" {
-  description = "SQS Queue ARN"
-  value       = data.aws_sqs_queue.job_queue.arn
 }
 
 output "dynamodb_table_name" {
@@ -43,54 +88,30 @@ output "redis_endpoint" {
   value       = aws_elasticache_cluster.redis.cache_nodes[0].address
 }
 
+# ==========================================
+# Security Group Outputs
+# ==========================================
+output "alb_security_group_id" {
+  description = "ALB Security Group ID"
+  value       = aws_security_group.alb_sg.id
+}
+
+output "controller_security_group_id" {
+  description = "Controller Security Group ID"
+  value       = aws_security_group.controller_sg.id
+}
+
 output "worker_security_group_id" {
   description = "Worker Security Group ID"
   value       = aws_security_group.worker_sg.id
 }
 
-output "lambda_security_group_id" {
-  description = "Lambda Security Group ID"
-  value       = aws_security_group.lambda_sg.id
+output "ai_security_group_id" {
+  description = "AI Node Security Group ID"
+  value       = aws_security_group.ai_sg.id
 }
 
-
-# ==========================================
-# API Gateway Outputs
-# ==========================================
-output "api_gateway_url" {
-  description = "API Gateway URL"
-  value       = aws_apigatewayv2_api.main.api_endpoint
-}
-
-output "api_gateway_id" {
-  description = "API Gateway ID"
-  value       = aws_apigatewayv2_api.main.id
-}
-
-# ==========================================
-# Lambda Outputs
-# ==========================================
-output "resource_manager_lambda_arn" {
-  description = "Resource Manager Lambda ARN"
-  value       = aws_lambda_function.resource_manager.arn
-}
-
-output "resource_manager_lambda_name" {
-  description = "Resource Manager Lambda Name"
-  value       = aws_lambda_function.resource_manager.function_name
-}
-
-output "dispatcher_lambda_arn" {
-  description = "Dispatcher Lambda ARN"
-  value       = aws_lambda_function.dispatcher.arn
-}
-
-output "dispatcher_lambda_name" {
-  description = "Dispatcher Lambda Name"
-  value       = aws_lambda_function.dispatcher.function_name
-}
-
-output "lambda_role_arn" {
-  description = "Lambda IAM Role ARN"
-  value       = aws_iam_role.lambda_role.arn
+output "redis_security_group_id" {
+  description = "Redis Security Group ID"
+  value       = aws_security_group.redis_sg.id
 }
