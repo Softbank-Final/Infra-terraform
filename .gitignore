@@ -3,3 +3,9 @@
 *.tfstate.backup
 *.tfvars
 lambda_placeholder.zip
+*.tfstate*
+.terraform/
+tfplan
+*.tfstate*
+.terraform/
+tfplan
