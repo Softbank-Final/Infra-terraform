@@ -152,7 +152,7 @@ resource "aws_security_group" "alb_sg" {
   tags = { Name = "nanogrid-alb-sg" }
 }
 
-# Controller EC2용 SG (기존 설정 유지)
+# Controller EC2용 SG
 resource "aws_security_group" "controller_sg" {
   name        = "nanogrid-controller-sg"
   description = "nanogrid-controller-sg"
@@ -166,18 +166,10 @@ resource "aws_security_group" "controller_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Express.js 포트
+  # ALB에서 8080 포트 접근 허용 (Express.js)
   ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # ALB에서 80 포트 접근 허용
-  ingress {
-    from_port       = 80
-    to_port         = 80
+    from_port       = 8080
+    to_port         = 8080
     protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
   }
@@ -263,7 +255,7 @@ resource "aws_lb" "main" {
 
 resource "aws_lb_target_group" "controller" {
   name     = "nanogrid-controller-tg"
-  port     = 80
+  port     = 8080
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
 
@@ -455,15 +447,17 @@ resource "aws_iam_instance_profile" "worker_profile" {
 # ==========================================
 # 6. Controller EC2
 # ==========================================
+# Controller #1 (AZ-a, Public Subnet 1)
 resource "aws_instance" "controller" {
   ami                    = "ami-04fcc2023d6e37430"
   instance_type          = "t3.small"
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.controller_sg.id]
+  iam_instance_profile   = aws_iam_instance_profile.controller_profile.name
   key_name               = "key"
 
   lifecycle {
-    ignore_changes = [ami, instance_type, subnet_id, user_data, iam_instance_profile, key_name]
+    ignore_changes = [ami, instance_type, subnet_id, user_data, key_name]
   }
 
   user_data = base64encode(<<-EOF
@@ -481,26 +475,62 @@ SQS_QUEUE_URL=${data.aws_sqs_queue.job_queue.url}
 REDIS_HOST=${aws_elasticache_cluster.redis.cache_nodes[0].address}
 REDIS_PORT=6379
 ENVEOF
-
-# Controller 앱 배포 (Git Clone 또는 S3에서 다운로드)
-# git clone https://github.com/your-repo/nanogrid-controller.git /app
-# cd /app && npm install && pm2 start controller.js
 EOF
   )
 
-  tags = { Name = "nanogrid-controller" }
+  tags = { Name = "nanogrid-controller-1" }
 }
 
-# Controller를 ALB Target Group에 등록
+# Controller #2 (AZ-c, Public Subnet 2) - Multi-AZ HA
+resource "aws_instance" "controller_2" {
+  ami                    = "ami-04fcc2023d6e37430"
+  instance_type          = "t3.small"
+  subnet_id              = aws_subnet.public_2.id
+  vpc_security_group_ids = [aws_security_group.controller_sg.id]
+  iam_instance_profile   = aws_iam_instance_profile.controller_profile.name
+  key_name               = "key"
+
+  user_data = base64encode(<<-EOF
+#!/bin/bash
+set -e
+apt-get update
+apt-get install -y nodejs npm
+npm install -g pm2
+
+# 환경 변수 설정
+cat >> /etc/environment << 'ENVEOF'
+S3_BUCKET=${data.aws_s3_bucket.code_bucket.bucket}
+DYNAMODB_TABLE=${aws_dynamodb_table.meta_table.name}
+SQS_QUEUE_URL=${data.aws_sqs_queue.job_queue.url}
+REDIS_HOST=${aws_elasticache_cluster.redis.cache_nodes[0].address}
+REDIS_PORT=6379
+ENVEOF
+EOF
+  )
+
+  tags = { Name = "nanogrid-controller-2" }
+}
+
+# Controller #1을 ALB Target Group에 등록
 resource "aws_lb_target_group_attachment" "controller" {
   target_group_arn = aws_lb_target_group.controller.arn
   target_id        = aws_instance.controller.id
-  port             = 80
+  port             = 8080
+}
+
+# Controller #2를 ALB Target Group에 등록
+resource "aws_lb_target_group_attachment" "controller_2" {
+  target_group_arn = aws_lb_target_group.controller.arn
+  target_id        = aws_instance.controller_2.id
+  port             = 8080
 }
 
 # ==========================================
-# 7. AI Node EC2
+# 7. AI Node EC2 (현재 stopped 상태로 유지 - 비용 절감)
 # ==========================================
+# AI Node는 수동으로 관리 (필요시 AWS 콘솔에서 시작)
+# Terraform에서 제외하여 stopped 상태 유지
+/*
 resource "aws_instance" "ai_node" {
   ami                    = var.ami_id
   instance_type          = var.ai_instance_type
@@ -511,20 +541,17 @@ resource "aws_instance" "ai_node" {
   user_data = base64encode(<<-EOF
 #!/bin/bash
 set -e
-
-# Docker 설치
 apt-get update
 apt-get install -y docker.io
 systemctl start docker
 systemctl enable docker
+docker run -d --name ollama --restart always -p 11434:11434 -e OLLAMA_HOST=0.0.0.0 ollama/ollama
+sleep 30
+docker exec ollama ollama pull llama3:8b
+EOF
+  )
 
-# Ollama 컨테이너 실행 (재부팅 시 자동 시작)
-docker run -d \
-  --name ollama \
-  --restart always \
-  -p 11434:11434 \
-  -e OLLAMA_HOST=0.0.0.0 \
-  ollama/ollama
+  tags = { Name = "nanogrid-ai-nod
 
 # 컨테이너 준비 대기
 sleep 30
@@ -572,7 +599,7 @@ AI_ENDPOINT=http://10.0.20.100:11434
 ENVEOF
 
 # Worker Agent 배포
-# git clone https://github.com/your-repo/nanogrid-worker.git /app
+# git clone https://github.com/https://github.com/Softbank-Final/Infra-controller.git /app
 # cd /app && python3 agent.py &
 EOF
   )

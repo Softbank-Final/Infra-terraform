@@ -35,29 +35,40 @@ output "alb_arn" {
 }
 
 # ==========================================
-# Controller Outputs
+# Controller Outputs (Multi-AZ)
 # ==========================================
-output "controller_private_ip" {
-  description = "Controller EC2 Private IP"
+output "controller_1_private_ip" {
+  description = "Controller #1 EC2 Private IP (AZ-a)"
   value       = aws_instance.controller.private_ip
 }
 
-output "controller_instance_id" {
-  description = "Controller EC2 Instance ID"
+output "controller_1_instance_id" {
+  description = "Controller #1 EC2 Instance ID"
   value       = aws_instance.controller.id
 }
 
-# ==========================================
-# AI Node Outputs
-# ==========================================
-output "ai_node_private_ip" {
-  description = "AI Node Private IP"
-  value       = aws_instance.ai_node.private_ip
+output "controller_2_private_ip" {
+  description = "Controller #2 EC2 Private IP (AZ-c)"
+  value       = aws_instance.controller_2.private_ip
 }
 
+output "controller_2_instance_id" {
+  description = "Controller #2 EC2 Instance ID"
+  value       = aws_instance.controller_2.id
+}
+
+# ==========================================
+# AI Node Outputs (현재 stopped - 수동 관리)
+# ==========================================
+# AI Node는 Terraform에서 제외됨 (stopped 상태 유지)
+# output "ai_node_private_ip" {
+#   description = "AI Node Private IP"
+#   value       = "10.0.20.100"
+# }
+
 output "ai_node_endpoint" {
-  description = "AI Node Endpoint URL"
-  value       = "http://${aws_instance.ai_node.private_ip}:11434"
+  description = "AI Node Endpoint URL (수동 관리)"
+  value       = "http://10.0.20.100:11434"
 }
 
 # ==========================================
