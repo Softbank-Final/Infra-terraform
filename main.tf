@@ -43,12 +43,20 @@ resource "aws_subnet" "private_app" {
   tags              = { Name = "nanogrid-private-app-subnet" }
 }
 
-# Private Subnet - Worker/Data (EC2 Worker, Redis, AI Node용)
+# Private Subnet - Worker/Data (EC2 Worker, Redis, AI Node용) - AZ-a
 resource "aws_subnet" "private_data" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.private_data_subnet_cidr
   availability_zone = var.availability_zone
   tags              = { Name = "nanogrid-private-data-subnet" }
+}
+
+# Private Subnet - Worker/Data 2 (Multi-AZ용) - AZ-c
+resource "aws_subnet" "private_data_2" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.21.0/24"
+  availability_zone = "ap-northeast-2c"
+  tags              = { Name = "nanogrid-private-data-subnet-2" }
 }
 
 # Internet Gateway
@@ -100,6 +108,11 @@ resource "aws_route_table_association" "private_app" {
 
 resource "aws_route_table_association" "private_data" {
   subnet_id      = aws_subnet.private_data.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "private_data_2" {
+  subnet_id      = aws_subnet.private_data_2.id
   route_table_id = aws_route_table.private.id
 }
 
@@ -537,8 +550,9 @@ resource "aws_lb_target_group_attachment" "controller_2" {
 # ==========================================
 resource "aws_launch_template" "worker_template" {
   name_prefix   = "nanogrid-worker-"
-  image_id      = var.ami_id
+  image_id      = "ami-04fcc2023d6e37430"  # Amazon Linux 2023
   instance_type = var.worker_instance_type
+  key_name      = "key"
 
   iam_instance_profile {
     name = aws_iam_instance_profile.worker_profile.name
@@ -549,11 +563,14 @@ resource "aws_launch_template" "worker_template" {
   user_data = base64encode(<<-EOF
 #!/bin/bash
 set -e
-apt-get update
-apt-get install -y docker.io python3-pip
+
+# Amazon Linux 2023용 패키지 설치
+yum update -y
+yum install -y docker python3-pip git
 systemctl start docker
 systemctl enable docker
-usermod -aG docker ubuntu
+usermod -aG docker ec2-user
+
 pip3 install boto3 redis docker requests
 
 # 환경 변수 설정
@@ -567,7 +584,7 @@ AI_ENDPOINT=http://10.0.20.100:11434
 ENVEOF
 
 # Worker Agent 배포
-# git clone https://github.com/https://github.com/Softbank-Final/Infra-controller.git /app
+# git clone https://github.com/Softbank-Final/Infra-controller.git /app
 # cd /app && python3 agent.py &
 EOF
   )
@@ -583,7 +600,7 @@ resource "aws_autoscaling_group" "worker_asg" {
   desired_capacity    = var.asg_desired_capacity
   max_size            = var.asg_max_size
   min_size            = var.asg_min_size
-  vpc_zone_identifier = [aws_subnet.private_data.id]
+  vpc_zone_identifier = [aws_subnet.private_data.id, aws_subnet.private_data_2.id]  # Multi-AZ
 
   launch_template {
     id      = aws_launch_template.worker_template.id
