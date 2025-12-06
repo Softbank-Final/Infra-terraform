@@ -9,7 +9,7 @@ resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
-  tags = { Name = "nanogrid-vpc" }
+  tags                 = { Name = "nanogrid-vpc" }
 }
 
 # Public Subnet (NAT GW, ALB용) - AZ a
@@ -18,7 +18,7 @@ resource "aws_subnet" "public" {
   cidr_block              = var.public_subnet_cidr
   availability_zone       = var.availability_zone
   map_public_ip_on_launch = true
-  tags = { Name = "nanogrid-public-subnet" }
+  tags                    = { Name = "nanogrid-public-subnet" }
 }
 
 # Public Subnet 2 (ALB용) - AZ c
@@ -27,7 +27,7 @@ resource "aws_subnet" "public_2" {
   cidr_block              = "10.0.2.0/24"
   availability_zone       = "ap-northeast-2c"
   map_public_ip_on_launch = true
-  tags = { Name = "nanogrid-public-subnet-2" }
+  tags                    = { Name = "nanogrid-public-subnet-2" }
 }
 
 resource "aws_route_table_association" "public_2" {
@@ -40,7 +40,7 @@ resource "aws_subnet" "private_app" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.private_app_subnet_cidr
   availability_zone = var.availability_zone
-  tags = { Name = "nanogrid-private-app-subnet" }
+  tags              = { Name = "nanogrid-private-app-subnet" }
 }
 
 # Private Subnet - Worker/Data (EC2 Worker, Redis, AI Node용)
@@ -48,7 +48,7 @@ resource "aws_subnet" "private_data" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.private_data_subnet_cidr
   availability_zone = var.availability_zone
-  tags = { Name = "nanogrid-private-data-subnet" }
+  tags              = { Name = "nanogrid-private-data-subnet" }
 }
 
 # Internet Gateway
@@ -166,7 +166,7 @@ resource "aws_security_group" "controller_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # ALB에서 8080 포트 접근 허용 (Express.js)
+  # ALB에서 8080 포트 접근 허용 (Express.js) -> 수동
   ingress {
     from_port       = 8080
     to_port         = 8080
@@ -368,13 +368,13 @@ resource "aws_iam_role_policy" "controller_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
+        Effect   = "Allow"
+        Action   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
         Resource = "${data.aws_s3_bucket.code_bucket.arn}/*"
       },
       {
-        Effect = "Allow"
-        Action = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem", "dynamodb:Query", "dynamodb:DeleteItem"]
+        Effect   = "Allow"
+        Action   = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem", "dynamodb:Query", "dynamodb:DeleteItem"]
         Resource = aws_dynamodb_table.meta_table.arn
       },
       {
@@ -530,39 +530,7 @@ resource "aws_lb_target_group_attachment" "controller_2" {
 # ==========================================
 # AI Node는 수동으로 관리 (필요시 AWS 콘솔에서 시작)
 # Terraform에서 제외하여 stopped 상태 유지
-/*
-resource "aws_instance" "ai_node" {
-  ami                    = var.ami_id
-  instance_type          = var.ai_instance_type
-  subnet_id              = aws_subnet.private_data.id
-  vpc_security_group_ids = [aws_security_group.ai_sg.id]
-  private_ip             = "10.0.20.100"
-
-  user_data = base64encode(<<-EOF
-#!/bin/bash
-set -e
-apt-get update
-apt-get install -y docker.io
-systemctl start docker
-systemctl enable docker
-docker run -d --name ollama --restart always -p 11434:11434 -e OLLAMA_HOST=0.0.0.0 ollama/ollama
-sleep 30
-docker exec ollama ollama pull llama3:8b
-EOF
-  )
-
-  tags = { Name = "nanogrid-ai-nod
-
-# 컨테이너 준비 대기
-sleep 30
-
-# 모델 사전 다운로드 (Cold Start 방지)
-docker exec ollama ollama pull llama3:8b
-EOF
-  )
-
-  tags = { Name = "nanogrid-ai-node" }
-}
+# 기존 인스턴스 ID: i-01807910ee985894f (10.0.20.100)
 
 # ==========================================
 # 8. Worker EC2 (Auto Scaling Group)
@@ -606,7 +574,7 @@ EOF
 
   tag_specifications {
     resource_type = "instance"
-    tags = { Name = "nanogrid-worker" }
+    tags          = { Name = "nanogrid-worker" }
   }
 }
 
