@@ -268,7 +268,7 @@ resource "aws_lb" "main" {
 
 resource "aws_lb_target_group" "controller" {
   name     = "nanogrid-controller-tg"
-  port     = 8080
+  port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
 
@@ -278,10 +278,14 @@ resource "aws_lb_target_group" "controller" {
     interval            = 30
     matcher             = "200"
     path                = "/health"
-    port                = "traffic-port"
+    port                = "8080"
     protocol            = "HTTP"
     timeout             = 5
     unhealthy_threshold = 2
+  }
+
+  lifecycle {
+    ignore_changes = all
   }
 
   tags = { Name = "nanogrid-controller-tg" }
@@ -372,6 +376,10 @@ resource "aws_iam_role" "controller_role" {
       Principal = { Service = "ec2.amazonaws.com" }
     }]
   })
+
+  lifecycle {
+    ignore_changes = [managed_policy_arns, inline_policy]
+  }
 }
 
 resource "aws_iam_role_policy" "controller_policy" {
