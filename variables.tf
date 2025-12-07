@@ -77,7 +77,7 @@ variable "asg_max_size" {
 variable "asg_min_size" {
   description = "Minimum number of Worker EC2 instances"
   type        = number
-  default     = 1
+  default     = 2
 }
 
 # Redis
