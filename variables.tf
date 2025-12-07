@@ -65,7 +65,7 @@ variable "worker_instance_type" {
 variable "asg_desired_capacity" {
   description = "Desired number of Worker EC2 instances"
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "asg_max_size" {
