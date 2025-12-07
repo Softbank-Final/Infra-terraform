@@ -665,8 +665,8 @@ resource "aws_cloudwatch_metric_alarm" "sqs_high" {
   namespace           = "AWS/SQS"
   period              = 60
   statistic           = "Average"
-  threshold           = 5
-  alarm_description   = "Scale out when SQS queue has 5+ messages"
+  threshold           = 10
+  alarm_description   = "Scale out when SQS queue has 10+ messages"
   alarm_actions       = [aws_autoscaling_policy.scale_out.arn]
 
   dimensions = {
