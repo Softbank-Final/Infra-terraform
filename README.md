@@ -43,6 +43,8 @@
 ---
 
 ## 아키텍처
+<img width="1427" height="1501" alt="image" src="https://github.com/user-attachments/assets/fe3623e2-3c43-4bfd-84e0-3edb46ebee02" />
+
 
 ### 전체 아키텍처 다이어그램
 
