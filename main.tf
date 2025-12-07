@@ -693,152 +693,152 @@ resource "aws_cloudwatch_metric_alarm" "sqs_low" {
 
 
 # ==========================================
-# 10. AWS WAF (Web Application Firewall) - 주석 처리됨
+# 10. AWS WAF (Web Application Firewall)
 # ==========================================
-# resource "aws_wafv2_web_acl" "main" {
-#   name        = "nanogrid-waf"
-#   description = "WAF for NanoGrid ALB"
-#   scope       = "REGIONAL"
-#
-#   default_action {
-#     allow {}
-#   }
-#
-#   # SQL Injection 방어
-#   rule {
-#     name     = "AWSManagedRulesSQLiRuleSet"
-#     priority = 1
-#
-#     override_action {
-#       none {}
-#     }
-#
-#     statement {
-#       managed_rule_group_statement {
-#         name        = "AWSManagedRulesSQLiRuleSet"
-#         vendor_name = "AWS"
-#       }
-#     }
-#
-#     visibility_config {
-#       cloudwatch_metrics_enabled = true
-#       metric_name                = "SQLiRuleSetMetric"
-#       sampled_requests_enabled   = true
-#     }
-#   }
-#
-#   # XSS, Path Traversal 등 일반 공격 방어
-#   rule {
-#     name     = "AWSManagedRulesCommonRuleSet"
-#     priority = 2
-#
-#     override_action {
-#       none {}
-#     }
-#
-#     statement {
-#       managed_rule_group_statement {
-#         name        = "AWSManagedRulesCommonRuleSet"
-#         vendor_name = "AWS"
-#       }
-#     }
-#
-#     visibility_config {
-#       cloudwatch_metrics_enabled = true
-#       metric_name                = "CommonRuleSetMetric"
-#       sampled_requests_enabled   = true
-#     }
-#   }
-#
-#   # Log4j, 악성 입력값 방어
-#   rule {
-#     name     = "AWSManagedRulesKnownBadInputsRuleSet"
-#     priority = 3
-#
-#     override_action {
-#       none {}
-#     }
-#
-#     statement {
-#       managed_rule_group_statement {
-#         name        = "AWSManagedRulesKnownBadInputsRuleSet"
-#         vendor_name = "AWS"
-#       }
-#     }
-#
-#     visibility_config {
-#       cloudwatch_metrics_enabled = true
-#       metric_name                = "BadInputsRuleSetMetric"
-#       sampled_requests_enabled   = true
-#     }
-#   }
-#
-#   # Rate Limiting (DDoS 방어) - IP당 5분에 1000 요청 제한
-#   rule {
-#     name     = "RateLimitRule"
-#     priority = 4
-#
-#     action {
-#       block {}
-#     }
-#
-#     statement {
-#       rate_based_statement {
-#         limit              = 1000
-#         aggregate_key_type = "IP"
-#       }
-#     }
-#
-#     visibility_config {
-#       cloudwatch_metrics_enabled = true
-#       metric_name                = "RateLimitMetric"
-#       sampled_requests_enabled   = true
-#     }
-#   }
-#
-#   # Size Constraint (Zip Bomb 방어) - Body 1000MB 제한
-#   rule {
-#     name     = "SizeConstraintRule"
-#     priority = 5
-#
-#     action {
-#       block {}
-#     }
-#
-#     statement {
-#       size_constraint_statement {
-#         field_to_match {
-#           body {
-#             oversize_handling = "MATCH"
-#           }
-#         }
-#         comparison_operator = "GT"
-#         size                = 1048576000  # 1000MB
-#         text_transformation {
-#           priority = 0
-#           type     = "NONE"
-#         }
-#       }
-#     }
-#
-#     visibility_config {
-#       cloudwatch_metrics_enabled = true
-#       metric_name                = "SizeConstraintMetric"
-#       sampled_requests_enabled   = true
-#     }
-#   }
-#
-#   visibility_config {
-#     cloudwatch_metrics_enabled = true
-#     metric_name                = "nanogridWAFMetric"
-#     sampled_requests_enabled   = true
-#   }
-#
-#   tags = { Name = "nanogrid-waf" }
-# }
-#
-# # WAF를 ALB에 연결
-# resource "aws_wafv2_web_acl_association" "main" {
-#   resource_arn = aws_lb.main.arn
-#   web_acl_arn  = aws_wafv2_web_acl.main.arn
-# }
+resource "aws_wafv2_web_acl" "main" {
+  name        = "nanogrid-waf"
+  description = "WAF for NanoGrid ALB"
+  scope       = "REGIONAL"
+
+  default_action {
+    allow {}
+  }
+
+  # SQL Injection 방어
+  rule {
+    name     = "AWSManagedRulesSQLiRuleSet"
+    priority = 1
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesSQLiRuleSet"
+        vendor_name = "AWS"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "SQLiRuleSetMetric"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # XSS, Path Traversal 등 일반 공격 방어
+  rule {
+    name     = "AWSManagedRulesCommonRuleSet"
+    priority = 2
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesCommonRuleSet"
+        vendor_name = "AWS"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "CommonRuleSetMetric"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # Log4j, 악성 입력값 방어
+  rule {
+    name     = "AWSManagedRulesKnownBadInputsRuleSet"
+    priority = 3
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesKnownBadInputsRuleSet"
+        vendor_name = "AWS"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "BadInputsRuleSetMetric"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # Rate Limiting (DDoS 방어) - IP당 5분에 1000 요청 제한
+  rule {
+    name     = "RateLimitRule"
+    priority = 4
+
+    action {
+      block {}
+    }
+
+    statement {
+      rate_based_statement {
+        limit              = 1000
+        aggregate_key_type = "IP"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "RateLimitMetric"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # Size Constraint (Zip Bomb 방어) - Body 1000MB 제한
+  rule {
+    name     = "SizeConstraintRule"
+    priority = 5
+
+    action {
+      block {}
+    }
+
+    statement {
+      size_constraint_statement {
+        field_to_match {
+          body {
+            oversize_handling = "MATCH"
+          }
+        }
+        comparison_operator = "GT"
+        size                = 1048576000  # 1000MB
+        text_transformation {
+          priority = 0
+          type     = "NONE"
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "SizeConstraintMetric"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name                = "nanogridWAFMetric"
+    sampled_requests_enabled   = true
+  }
+
+  tags = { Name = "nanogrid-waf" }
+}
+
+# WAF를 ALB에 연결
+resource "aws_wafv2_web_acl_association" "main" {
+  resource_arn = aws_lb.main.arn
+  web_acl_arn  = aws_wafv2_web_acl.main.arn
+}
