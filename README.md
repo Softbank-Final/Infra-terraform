@@ -1,4 +1,4 @@
-# NanoGrid - Self-Hosted AI FaaS Platform
+# NanoGrid - Self-Hosted AI FaaS Platform - 고동현
 
 > Lambda 없이 EC2 위에 직접 구현한 완전 자립형(Self-Hosted) AI FaaS 플랫폼
 
